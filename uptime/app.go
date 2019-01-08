@@ -65,7 +65,7 @@ func (a *App) Run() {
     }()
 
     for {
-        log.Info("scanning sites")
+        log.Info("Scanning sites")
         a.PopulateSiteList()
         time.Sleep(a.Delay)
     }
@@ -76,11 +76,11 @@ func (a *App) Dispatcher() {
     ResponseWorkerQueue := make(chan chan SiteResponse, a.Nworkers)
 
     for i := 0; i < a.Nworkers; i++ {
-        log.Info("starting request worker ", i)
+        log.Info("Starting request worker ", i)
         requestWorker := NewRequestWorker(i, RequestWorkerQueue)
         requestWorker.Start()
 
-        log.Info("starting response worker ", i)
+        log.Info("Starting response worker ", i)
         responseWorker := NewResponseWorker(i, ResponseWorkerQueue)
         responseWorker.Start()
     }
@@ -92,15 +92,14 @@ func (a *App) Dispatcher() {
                 log.Info("Recieved work request")
                 go func() {
                     worker := <-RequestWorkerQueue
-
-                    log.Info("Dispactching work request")
+                    log.Info("Dispatching request worker")
                     worker <- work
                 }()
             case work := <-ResponseQueue:
-                log.Info("recieved response work")
+                log.Info("Recieved response work")
                 go func() {
                     worker := <-ResponseWorkerQueue
-                    log.Info("dispatching response work request")
+                    log.Info("Dispatching response worker")
                     worker <- work
                 }()
             }
