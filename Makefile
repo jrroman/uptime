@@ -35,5 +35,5 @@ clean:
 run:
 	$(GOBIN)/$(RUN_BIN) \
 		-f "/sites.csv" \
-		-d 15s \
+		-d 300s \
 		-n 5

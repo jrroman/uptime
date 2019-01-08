@@ -86,12 +86,14 @@ func (sr *SiteResponse) CheckSiteResponse() {
         log.WithFields(log.Fields{
             "URL": sr.URL,
             "Status": sr.Status,
+            "Email": sr.Email,
         }).Warn("BAD REQUEST SEND EMAIL")
         sr.SendEmail()
     } else {
         log.WithFields(log.Fields{
             "URL": sr.URL,
             "Status": sr.Status,
+            "Email": sr.Email,
         }).Info("URL OK")
     }
 }

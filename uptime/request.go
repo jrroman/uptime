@@ -113,7 +113,7 @@ func (wr *WorkRequest) MakeRequest() {
     log.Info("Making request to: ", validatedURL)
     resp, err := client.Head(validatedURL)
     if err != nil {
-        log.Info("request error: ", err)
+        log.Warn("request error: ", err)
         return
     }
 
@@ -123,6 +123,5 @@ func (wr *WorkRequest) MakeRequest() {
         URL: validatedURL,
     }
 
-    log.Info("jaljsdfl;a ", response)
     ResponseQueue <- response
 }
