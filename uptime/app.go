@@ -54,23 +54,6 @@ func (a *App) PopulateSiteList() {
    }
 }
 
-func (a *App) Run() {
-    a.Dispatcher()
-
-    c := make(chan os.Signal)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-    go func() {
-        <-c
-        os.Exit(1)
-    }()
-
-    for {
-        log.Info("Scanning sites")
-        a.PopulateSiteList()
-        time.Sleep(a.Delay)
-    }
-}
-
 func (a *App) Dispatcher() {
     RequestWorkerQueue := make(chan chan WorkRequest, a.Nworkers)
     ResponseWorkerQueue := make(chan chan SiteResponse, a.Nworkers)
@@ -105,4 +88,21 @@ func (a *App) Dispatcher() {
             }
         }
     }()
+}
+
+func (a *App) Run() {
+    a.Dispatcher()
+
+    c := make(chan os.Signal)
+    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    go func() {
+        <-c
+        os.Exit(1)
+    }()
+
+    for {
+        log.Info("Scanning sites")
+        a.PopulateSiteList()
+        time.Sleep(a.Delay)
+    }
 }
