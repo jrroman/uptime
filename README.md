@@ -8,3 +8,11 @@ site_name sub.domain.tld
 
 this file is parsed just on the space so please
 only use spaces to separate the site name from the URL
+
+### Installation
+
+Just run the `install.sh` within `bin/`
+
+```
+./bin/install.sh
+```
