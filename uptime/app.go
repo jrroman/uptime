@@ -15,15 +15,17 @@ import (
 var log = logrus.New()
 
 type App struct {
-    Filename    string
     Delay       time.Duration
+    Filename    string
     Nworkers    int
+    Wait        time.Duration
 }
 
 func (a *App) Initialize() {
-    flag.StringVar(&a.Filename, "f", "", "Path to the file with sitenames and urls")
     flag.DurationVar(&a.Delay, "d", time.Second * 5, "Delay between requests")
+    flag.StringVar(&a.Filename, "f", "", "Path to the file with sitenames and urls")
     flag.IntVar(&a.Nworkers, "n", 2, "number of worker routines")
+    flag.DurationVar(&a.Wait, "w", time.Second * 5, "Delay between requests")
     flag.Parse()
 }
 
@@ -93,16 +95,25 @@ func (a *App) Dispatcher() {
 func (a *App) Run() {
     a.Dispatcher()
 
-    c := make(chan os.Signal)
-    signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+    done := make(chan bool)
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, os.Interrupt, syscall.SIGTERM)
+
     go func() {
-        <-c
-        os.Exit(1)
+        <-quit
+        log.Info("Uptime bot is shutting down")
+        time.Sleep(a.Wait)
+        close(done)
     }()
 
-    for {
-        log.Info("Scanning sites")
-        a.PopulateSiteList()
-        time.Sleep(a.Delay)
-    }
+    go func() {
+        for {
+            log.Info("Scanning sites")
+            a.PopulateSiteList()
+            time.Sleep(a.Delay)
+        }
+    }()
+
+    <-done
+    log.Info("server stopped")
 }
