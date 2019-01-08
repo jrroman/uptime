@@ -5,7 +5,7 @@ import (
 
     "github.com/sendgrid/sendgrid-go"
     "github.com/sendgrid/sendgrid-go/helpers/mail"
-    log "github.com/sirupsen/logrus"
+    "github.com/sirupsen/logrus"
 )
 
 var ResponseQueue = make(chan SiteResponse, 50)
@@ -83,14 +83,14 @@ func ResponseDispatch(nworkers int) {
 
 func (sr *SiteResponse) CheckSiteResponse() {
     if sr.Status > 399 {
-        log.WithFields(log.Fields{
+        log.WithFields(logrus.Fields{
             "URL": sr.URL,
             "Status": sr.Status,
             "Email": sr.Email,
         }).Warn("BAD REQUEST SEND EMAIL")
         sr.SendEmail()
     } else {
-        log.WithFields(log.Fields{
+        log.WithFields(logrus.Fields{
             "URL": sr.URL,
             "Status": sr.Status,
             "Email": sr.Email,
