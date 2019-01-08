@@ -27,7 +27,7 @@ func (a *App) Initialize() {
     flag.Parse()
 }
 
-func (a *App) GetSiteList() {
+func (a *App) PopulateSiteList() {
     f, err := os.Open(a.Filename)
     if err != nil {
        log.Info("failed opening file: ", err)
@@ -55,8 +55,7 @@ func (a *App) GetSiteList() {
 }
 
 func (a *App) Run() {
-    RequestDispatch(a.Nworkers)
-    ResponseDispatch(a.Nworkers)
+    a.Dispatcher()
 
     c := make(chan os.Signal)
     signal.Notify(c, os.Interrupt, syscall.SIGTERM)
@@ -67,7 +66,44 @@ func (a *App) Run() {
 
     for {
         log.Info("scanning sites")
-        a.GetSiteList()
+        a.PopulateSiteList()
         time.Sleep(a.Delay)
     }
+}
+
+func (a *App) Dispatcher() {
+    RequestWorkerQueue := make(chan chan WorkRequest, a.Nworkers)
+    ResponseWorkerQueue := make(chan chan SiteResponse, a.Nworkers)
+
+    for i := 0; i < a.Nworkers; i++ {
+        log.Info("starting request worker ", i)
+        requestWorker := NewRequestWorker(i, RequestWorkerQueue)
+        requestWorker.Start()
+
+        log.Info("starting response worker ", i)
+        responseWorker := NewResponseWorker(i, ResponseWorkerQueue)
+        responseWorker.Start()
+    }
+
+    go func() {
+        for {
+            select {
+            case work := <-WorkQueue:
+                log.Info("Recieved work request")
+                go func() {
+                    worker := <-RequestWorkerQueue
+
+                    log.Info("Dispactching work request")
+                    worker <- work
+                }()
+            case work := <-ResponseQueue:
+                log.Info("recieved response work")
+                go func() {
+                    worker := <-ResponseWorkerQueue
+                    log.Info("dispatching response work request")
+                    worker <- work
+                }()
+            }
+        }
+    }()
 }

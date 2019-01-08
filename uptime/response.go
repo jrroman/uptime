@@ -57,30 +57,6 @@ func (w *ResponseWorker) Stop() {
     }()
 }
 
-func ResponseDispatch(nworkers int) {
-    WorkerQueue := make(chan chan SiteResponse, nworkers)
-
-    for i := 0; i < nworkers; i++ {
-        log.Info("starting response worker ", i)
-        worker := NewResponseWorker(i, WorkerQueue)
-        worker.Start()
-    }
-
-    go func() {
-        for {
-            select {
-            case work := <-ResponseQueue:
-                log.Info("recieved response work")
-                go func() {
-                    worker := <-WorkerQueue
-                    log.Info("dispatching response work request")
-                    worker <- work
-                }()
-            }
-        }
-    }()
-}
-
 func (sr *SiteResponse) CheckSiteResponse() {
     if sr.Status > 399 {
         log.WithFields(logrus.Fields{

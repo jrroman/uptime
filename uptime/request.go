@@ -1,11 +1,12 @@
 package main
 
 import (
-    "fmt"
     "net"
     "net/http"
     "net/url"
     "time"
+
+    "github.com/sirupsen/logrus"
 )
 
 var WorkQueue = make(chan WorkRequest, 100)
@@ -41,10 +42,16 @@ func (w *RequestWorker) Start() {
 
             select {
             case work := <-w.Work:
-                fmt.Printf("Worker: %d, name: %s, url: %s\n", w.ID, work.Name, work.URL)
+                log.WithFields(logrus.Fields{
+                    "WorkerId": w.ID,
+                    "Name": work.Name,
+                    "URL": work.URL,
+                }).Info("request made")
                 work.MakeRequest()
             case <-w.QuitChan:
-                fmt.Printf("Worker: %d stopping\n", w.ID)
+                log.WithFields(logrus.Fields{
+                    "WorkerId": w.ID,
+                }).Info("worker stopping")
                 return
             }
         }
@@ -54,31 +61,6 @@ func (w *RequestWorker) Start() {
 func (w *RequestWorker) Stop() {
     go func() {
         w.QuitChan <- true
-    }()
-}
-
-func RequestDispatch(nworkers int) {
-    WorkerQueue := make(chan chan WorkRequest, nworkers)
-
-    for i := 0; i < nworkers; i++ {
-        log.Info("starting worker ", i)
-        worker := NewRequestWorker(i, WorkerQueue)
-        worker.Start()
-    }
-
-    go func() {
-        for {
-            select {
-            case work := <-WorkQueue:
-                log.Info("Recieved work request")
-                go func() {
-                    worker := <-WorkerQueue
-
-                    log.Info("Dispactching work request")
-                    worker <- work
-                }()
-            }
-        }
     }()
 }
 
