@@ -1,10 +1,10 @@
 #!/bin/sh
 
-build_image() {
-  docker build -t jrroman/uptime .
+pull_image() {
+  docker pull jrroman/uptime
 }
 
-start_image() {
+start_container() {
   docker run \
     --rm \
     -it \
@@ -15,7 +15,7 @@ start_image() {
 }
 
 main() {
-  build_image
-  start_image
+  pull_image
+  start_container
 }
 main
