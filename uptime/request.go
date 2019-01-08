@@ -13,6 +13,7 @@ import (
 var WorkQueue = make(chan WorkRequest, 100)
 
 type WorkRequest struct {
+    Email   string
     Name    string
     URL     string
 }
@@ -117,9 +118,11 @@ func (wr *WorkRequest) MakeRequest() {
     }
 
     response := SiteResponse{
-        URL: validatedURL,
+        Email: wr.Email,
         Status: resp.StatusCode,
+        URL: validatedURL,
     }
 
+    log.Info("jaljsdfl;a ", response)
     ResponseQueue <- response
 }

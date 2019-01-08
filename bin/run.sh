@@ -15,6 +15,7 @@ build_and_run() {
 }
 
 main() {
+  source ./defaults.env
   build_and_run
 }
 main

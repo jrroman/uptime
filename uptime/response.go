@@ -1,14 +1,19 @@
 package main
 
 import (
+    "os"
+
+    "github.com/sendgrid/sendgrid-go"
+    "github.com/sendgrid/sendgrid-go/helpers/mail"
     log "github.com/sirupsen/logrus"
 )
 
 var ResponseQueue = make(chan SiteResponse, 50)
 
 type SiteResponse struct {
-    URL     string
+    Email   string
     Status  int
+    URL     string
 }
 
 type ResponseWorker struct {
@@ -82,10 +87,31 @@ func (sr *SiteResponse) CheckSiteResponse() {
             "URL": sr.URL,
             "Status": sr.Status,
         }).Warn("BAD REQUEST SEND EMAIL")
+        sr.SendEmail()
     } else {
         log.WithFields(log.Fields{
             "URL": sr.URL,
             "Status": sr.Status,
         }).Info("URL OK")
     }
+}
+
+func (sr *SiteResponse) SendEmail() {
+    from := mail.NewEmail("Uptime status", os.Getenv("UPTIME_EMAIL"))
+    subject := "Website Uptime Warning"
+    to := mail.NewEmail("Uptime error email", sr.Email)
+    plainTextContent := "Uptime error for website"
+    htmlContent := "The website <a href=\"" + sr.URL + "\">" + sr.URL + "</a>"
+    message := mail.NewSingleEmail(from, subject, to, plainTextContent, htmlContent)
+    client := sendgrid.NewSendClient(os.Getenv("SENDGRID_API_KEY"))
+
+    resp, err := client.Send(message)
+    if err != nil {
+        log.Warn("sendgrid error: ", err)
+        return
+    }
+
+    log.Info(resp.StatusCode)
+    log.Info(resp.Body)
+    log.Info(resp.Headers)
 }

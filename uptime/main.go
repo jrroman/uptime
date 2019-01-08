@@ -39,6 +39,7 @@ func GetSitesToScan() {
        work := WorkRequest{
            Name: data[0],
            URL: data[1],
+           Email: data[2],
        }
 
        WorkQueue <- work

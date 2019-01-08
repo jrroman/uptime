@@ -1,1 +1,3 @@
 .DS_Store
+defaults.env
+checksites.csv
