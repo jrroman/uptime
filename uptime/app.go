@@ -12,6 +12,10 @@ import (
     "github.com/sirupsen/logrus"
 )
 
+const (
+    QueueSize = 100
+)
+
 var log = logrus.New()
 
 type App struct {
@@ -32,42 +36,42 @@ func (a *App) Initialize() {
 func (a *App) PopulateSiteList() {
     f, err := os.Open(a.Filename)
     if err != nil {
-       log.Info("failed opening file: ", err)
-       return
-   }
-   defer f.Close()
+        log.Info("failed opening file: ", err)
+        return
+    }
+    defer f.Close()
 
-   scanner := bufio.NewScanner(f)
-   for scanner.Scan() {
-       data := strings.Split(scanner.Text(), " ")
-       work := WorkRequest{
-           Name: data[0],
-           URL: data[1],
-           Email: data[2],
-       }
+    scanner := bufio.NewScanner(f)
+    for scanner.Scan() {
+        data := strings.Split(scanner.Text(), " ")
 
-       WorkQueue <- work
-       log.Info("work request queued")
-   }
+        name := data[0]
+        URL := ValidateURL(data[1])
+        email := data[2]
 
-   if err := scanner.Err(); err != nil {
-       log.Info("failed reading file: ", err)
-       return
-   }
+        work := WorkRequest{
+            Email: email,
+            Name: name,
+            Type: "request",
+            URL: URL,
+        }
+        WorkQueue <- work
+        log.Info("Work request queued")
+    }
+
+    if err := scanner.Err(); err != nil {
+        log.Info("failed reading file: ", err)
+        return
+    }
 }
 
 func (a *App) Dispatcher() {
-    RequestWorkerQueue := make(chan chan WorkRequest, a.Nworkers)
-    ResponseWorkerQueue := make(chan chan SiteResponse, a.Nworkers)
+    workerQueue := make(chan chan WorkRequest, a.Nworkers)
 
     for i := 0; i < a.Nworkers; i++ {
-        log.Info("Starting request worker ", i)
-        requestWorker := NewRequestWorker(i, RequestWorkerQueue)
-        requestWorker.Start()
-
-        log.Info("Starting response worker ", i)
-        responseWorker := NewResponseWorker(i, ResponseWorkerQueue)
-        responseWorker.Start()
+        log.Info("Starting worker #", i+1)
+        worker := NewWorker(i+1, workerQueue)
+        worker.Start()
     }
 
     go func() {
@@ -76,15 +80,8 @@ func (a *App) Dispatcher() {
             case work := <-WorkQueue:
                 log.Info("Recieved work request")
                 go func() {
-                    worker := <-RequestWorkerQueue
-                    log.Info("Dispatching request worker")
-                    worker <- work
-                }()
-            case work := <-ResponseQueue:
-                log.Info("Recieved response work")
-                go func() {
-                    worker := <-ResponseWorkerQueue
-                    log.Info("Dispatching response worker")
+                    log.Info("Dispatching worker")
+                    worker := <-workerQueue
                     worker <- work
                 }()
             }
@@ -115,5 +112,5 @@ func (a *App) Run() {
     }()
 
     <-done
-    log.Info("server stopped")
+    log.Info("Server stopped")
 }

@@ -1,7 +1,7 @@
 #!/bin/sh
 
 pull_image() {
-  docker pull jrroman/uptime
+  docker build -t jrroman/uptime .
 }
 
 start_container() {
