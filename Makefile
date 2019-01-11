@@ -17,8 +17,8 @@ INSTALL_DEPS=$(DEPCMD) ensure
 
 all: clean install_dependencies install
 install_dependencies:
-	$(INIT_DEPS)
 	$(INSTALL_DEPS)
+	# $(INIT_DEPS)
 
 install: install_dependencies
 	$(GOINSTALL) -v ./...
